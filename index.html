@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Spotify Top Tracks</title>
+</head>
+<body>
+
+<button onclick="login()">Login with Spotify</button>
+<pre id="output"></pre>
+
+<script>
+const clientId = "YOUR_CLIENT_ID";
+const redirectUri = window.location.origin;
+
+function login() {
+  const scopes = "user-top-read";
+  window.location = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${redirectUri}&scope=${scopes}`;
+}
+
+// Get token from URL
+function getTokenFromUrl() {
+  const hash = window.location.hash;
+  if (!hash) return null;
+
+  const params = new URLSearchParams(hash.substring(1));
+  return params.get("access_token");
+}
+
+async function fetchWebApi(endpoint, method, token, body) {
+  const res = await fetch(`https://api.spotify.com/${endpoint}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    method,
+    body: body ? JSON.stringify(body) : undefined
+  });
+  return await res.json();
+}
+
+async function getTopTracks(token) {
+  return (await fetchWebApi(
+    'v1/me/top/tracks?time_range=long_term&limit=5',
+    'GET',
+    token
+  )).items;
+}
+
+async function init() {
+  const token = getTokenFromUrl();
+
+  if (!token) {
+    document.getElementById("output").textContent = "Click login button first";
+    return;
+  }
+
+  const tracks = await getTopTracks(token);
+
+  const result = tracks.map(
+    t => `${t.name} - ${t.artists.map(a => a.name).join(", ")}`
+  ).join("\n");
+
+  document.getElementById("output").textContent = result;
+}
+
+init();
+</script>
+
+</body>
+</html><!DOCTYPE html>
+<html>
+<head>
+  <title>Music Pro App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h2>🎧 Music Pro</h2>
+  <button onclick="login()">Login</button>
+</header>
+
+<input type="text" id="search" placeholder="Search songs..." />
+
+<div id="results"></div>
+
+<!-- Mini Player -->
+<div id="player">
+  <img id="cover" />
+  <div>
+    <h4 id="title"></h4>
+    <p id="artist"></p>
+  </div>
+  <audio id="audio" controls></audio>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
