@@ -98,3 +98,73 @@ init();
 <script src="app.js"></script>
 </body>
 </html>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>BeatNova</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body style="background:black; color:white; font-family:sans-serif; text-align:center;">
+
+<h2>🎧 BeatNova</h2>
+
+<input type="text" id="search" placeholder="Search songs..." style="padding:10px; width:80%; border-radius:10px;">
+
+<div id="results"></div>
+
+<script>
+const clientId = "YOUR_CLIENT_ID";
+const redirectUri = window.location.origin;
+
+let token = null;
+
+function login() {
+  const scopes = "user-read-private";
+  window.location =
+    `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${redirectUri}&scope=${scopes}`;
+}
+
+function getToken() {
+  const hash = window.location.hash;
+  if (!hash) return null;
+  return new URLSearchParams(hash.substring(1)).get("access_token");
+}
+
+async function api(endpoint) {
+  const res = await fetch(`https://api.spotify.com/v1/${endpoint}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return await res.json();
+}
+
+document.getElementById("search").addEventListener("keyup", async (e) => {
+  const q = e.target.value;
+  if (!q) return;
+
+  const data = await api(`search?q=${q}&type=track&limit=5`);
+
+  let html = "";
+  data.tracks.items.forEach(song => {
+    html += `
+      <div style="margin:10px; padding:10px; background:#1db954; border-radius:10px;">
+        <img src="${song.album.images[0].url}" width="100"><br>
+        <b>${song.name}</b><br>
+        ${song.artists[0].name}<br>
+        ${song.preview_url ? `<audio controls src="${song.preview_url}"></audio>` : "No Preview"}
+      </div>
+    `;
+  });
+
+  document.getElementById("results").innerHTML = html;
+});
+
+token = getToken();
+
+if (!token) {
+  alert("Login first (add login button later)");
+}
+</script>
+
+</body>
+</html>
